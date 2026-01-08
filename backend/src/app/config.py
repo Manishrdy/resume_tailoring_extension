@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     # Open Resume Service Configuration
     OPEN_RESUME_URL: str = "http://localhost:3001"
     OPEN_RESUME_API_TIMEOUT: int = 30
+    OPEN_RESUME_FONT_FAMILY: str = "Open Sans"
+    OPEN_RESUME_FONT_SIZE: int = 11
+    OPEN_RESUME_THEME_COLOR: str = ""
+    OPEN_RESUME_DOCUMENT_SIZE: str = "A4"
 
     # Gemini AI Configuration (NEW google-genai package)
     GEMINI_API_KEY: str = ""

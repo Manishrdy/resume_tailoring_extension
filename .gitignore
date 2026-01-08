@@ -77,3 +77,7 @@ backend/src/__pycache__/
 backend/tests/__pycache__/
 *.pdf
 *.docx
+
+# Allow Open Resume app library files
+!open-resume-service/src/app/lib/
+!open-resume-service/src/app/lib/**

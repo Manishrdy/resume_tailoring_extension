@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { resume, template = "default" } = body;
+    const { resume, template = "default", settings } = body;
 
     if (!resume) {
       return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { generatePDF } = await import("../../../lib/resume-pdf-generator");
 
     // Generate PDF
-    const pdfBuffer = await generatePDF(resume, template);
+    const pdfBuffer = await generatePDF(resume, template, settings);
 
     // Return PDF as binary response
     return new NextResponse(pdfBuffer, {
