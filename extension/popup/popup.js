@@ -707,36 +707,25 @@ function collectResumeFormState() {
 function applyResumeFormState(state) {
     if (!state) return;
 
-    const setVal = (name, value) => {
-        const el = document.querySelector(`[name="${name}"]`);
-        if (el) el.value = value || '';
-    };
-    const setEither = (a, b, value) => {
-        const elA = document.querySelector(`[name="${a}"]`);
-        if (elA) { elA.value = value || ''; return; }
-        const elB = document.querySelector(`[name="${b}"]`);
-        if (elB) elB.value = value || '';
-    };
-
     // Basic fields
-    setVal('resumeName', state.resumeName || '');
+    document.querySelector('[name="resumeName"]').value = state.resumeName || '';
 
     const pi = state.personalInfo || {};
-    setVal('name', pi.name || '');
-    setVal('email', pi.email || '');
-    setVal('phone', pi.phone || '');
-    setVal('location', pi.location || '');
-    setVal('linkedin', pi.linkedin || '');
-    setEither('website', 'portfolio', pi.website || pi.portfolio || '');
-    setVal('github', pi.github || '');
-    setVal('summary', pi.summary || '');
+    document.querySelector('[name="name"]').value = pi.name || '';
+    document.querySelector('[name="email"]').value = pi.email || '';
+    document.querySelector('[name="phone"]').value = pi.phone || '';
+    document.querySelector('[name="location"]').value = pi.location || '';
+    document.querySelector('[name="linkedin"]').value = pi.linkedin || '';
+    document.querySelector('[name="portfolio"]').value = pi.portfolio || pi.website || '';  // FIX
+    document.querySelector('[name="github"]').value = pi.github || '';
+    document.querySelector('[name="summary"]').value = pi.summary || '';
 
     // Dynamic sections
     clearDynamicContainers();
 
     (state.experience || []).forEach(exp => addExperienceEntry({
-        employer: exp.employer || '',
-        role: exp.role || '',
+        employer: exp.employer || exp.company || '',  // FIX
+        role: exp.role || exp.position || '',          // FIX
         startDate: exp.startDate || '',
         endDate: exp.endDate || '',
         description: Array.isArray(exp.description) ? exp.description : []
@@ -747,21 +736,50 @@ function applyResumeFormState(state) {
         degree: edu.degree || '',
         startDate: edu.startDate || '',
         endDate: edu.endDate || '',
-        achievements: Array.isArray(edu.achievements) ? edu.achievements : (Array.isArray(edu.coursework) ? edu.coursework : [])
+        coursework: Array.isArray(edu.coursework) ? edu.coursework : 
+                   Array.isArray(edu.achievements) ? edu.achievements : []  // FIX
     }));
 
-    (state.projects || []).forEach(proj => addProjectEntry({
-        name: proj.name || '',
-        github: proj.github || '',
-        startDate: proj.startDate || '',
-        endDate: proj.endDate || '',
-        description: Array.isArray(proj.description) ? proj.description : []
-    }));
+    (state.projects || []).forEach(proj => {
+        let description = [];
+        if (typeof proj.description === 'string') {
+            description = proj.description.split('. ').filter(s => s.trim());
+        } else if (Array.isArray(proj.description)) {
+            description = proj.description;
+        } else if (Array.isArray(proj.highlights)) {
+            description = proj.highlights;
+        }
+        
+        addProjectEntry({
+            name: proj.name || '',
+            github: proj.github || proj.link || '',  // FIX
+            startDate: proj.startDate || '',
+            endDate: proj.endDate || '',
+            description: description
+        });
+    });
 
-    (state.skills || []).forEach(s => addSkillEntry({
-        category: s.category || '',
-        skills: s.skills || ''
-    }));
+    // Skills - handle both formats
+    if (state.skills) {
+        if (typeof state.skills === 'object' && !Array.isArray(state.skills)) {
+            Object.entries(state.skills).forEach(([category, skills]) => {
+                const skillsStr = Array.isArray(skills) ? skills.join(', ') : String(skills);
+                addSkillEntry({ category, skills: skillsStr });
+            });
+        } else if (Array.isArray(state.skills)) {
+            const chunkSize = 5;
+            for (let i = 0; i < state.skills.length; i += chunkSize) {
+                const chunk = state.skills.slice(i, i + chunkSize);
+                const category = i === 0 ? 'Primary Skills' : `Skills ${Math.floor(i / chunkSize) + 1}`;
+                addSkillEntry({ category, skills: chunk.join(', ') });
+            }
+        } else {
+            (state.skills || []).forEach(s => addSkillEntry({
+                category: s.category || '',
+                skills: s.skills || ''
+            }));
+        }
+    }
 }
 
 async function handleClearDraft() {
@@ -794,77 +812,96 @@ function clearDynamicContainers() {
 }
 
 // Populate Form (for editing)
+// Populate Form (for editing)
 function populateForm(resume) {
-    const setVal = (name, value) => {
-        const el = document.querySelector(`[name="${name}"]`);
-        if (el) el.value = value || '';
-    };
-    const setEither = (a, b, value) => {
-        const elA = document.querySelector(`[name="${a}"]`);
-        if (elA) { elA.value = value || ''; return; }
-        const elB = document.querySelector(`[name="${b}"]`);
-        if (elB) elB.value = value || '';
-    };
-
     // Resume name
-    setVal('resumeName', resume.name || '');
+    document.querySelector('[name="resumeName"]').value = resume.name || '';
 
+    // Personal info - handle both old and new field names
     const pi = resume.personalInfo || {};
-    setVal('name', pi.name || '');
-    setVal('email', pi.email || '');
-    setVal('phone', pi.phone || '');
-    setVal('location', pi.location || '');
-    setVal('linkedin', pi.linkedin || '');
-    setEither('website', 'portfolio', pi.website || pi.portfolio || '');
-    setVal('github', pi.github || '');
-    setVal('summary', pi.summary || '');
+    document.querySelector('[name="name"]').value = pi.name || '';
+    document.querySelector('[name="email"]').value = pi.email || '';
+    document.querySelector('[name="phone"]').value = pi.phone || '';
+    document.querySelector('[name="location"]').value = pi.location || '';
+    document.querySelector('[name="linkedin"]').value = pi.linkedin || '';
+    document.querySelector('[name="portfolio"]').value = pi.portfolio || pi.website || '';  // FIX: Accept both
+    document.querySelector('[name="github"]').value = pi.github || '';
+    document.querySelector('[name="summary"]').value = pi.summary || '';
 
-    // Dynamic sections
+    // Clear containers first
     clearDynamicContainers();
 
-    // Experience
-    (resume.experience || []).forEach(exp => addExperienceEntry({
-        employer: exp.company || exp.employer || '',
-        role: exp.position || exp.role || '',
-        startDate: exp.startDate || '',
-        endDate: exp.endDate || '',
-        description: Array.isArray(exp.description) ? exp.description : parseBullets(exp.description)
-    }));
-
-    // Education
-    (resume.education || []).forEach(edu => addEducationEntry({
-        institution: edu.institution || '',
-        degree: edu.degree || '',
-        startDate: edu.startDate || '',
-        endDate: edu.endDate || '',
-        achievements: Array.isArray(edu.achievements) ? edu.achievements : (Array.isArray(edu.coursework) ? edu.coursework : [])
-    }));
-
-    // Projects
-    (resume.projects || []).forEach(proj => {
-        const highlights = Array.isArray(proj.highlights) && proj.highlights.length
-            ? proj.highlights
-            : parseBullets(proj.description);
-        addProjectEntry({
-            name: proj.name || '',
-            github: proj.link || proj.github || '',
-            startDate: proj.startDate || '',
-            endDate: proj.endDate || '',
-            description: highlights
+    // Experience - handle both old (employer/role) and new (company/position) field names
+    if (resume.experience && Array.isArray(resume.experience)) {
+        resume.experience.forEach(exp => {
+            addExperienceEntry({
+                employer: exp.employer || exp.company || '',  // FIX: Accept both
+                role: exp.role || exp.position || '',          // FIX: Accept both
+                startDate: exp.startDate || '',
+                endDate: exp.endDate || '',
+                description: Array.isArray(exp.description) ? exp.description : []
+            });
         });
-    });
+    }
 
-    // Skills
-    if (Array.isArray(resume.skills)) {
-        addSkillEntry({
-            category: 'Skills',
-            skills: resume.skills.join(', ')
+    // Education - handle both coursework and achievements
+    if (resume.education && Array.isArray(resume.education)) {
+        resume.education.forEach(edu => {
+            addEducationEntry({
+                institution: edu.institution || '',
+                degree: edu.degree || '',
+                startDate: edu.startDate || '',
+                endDate: edu.endDate || '',
+                coursework: Array.isArray(edu.coursework) ? edu.coursework : 
+                           Array.isArray(edu.achievements) ? edu.achievements : []  // FIX: Accept both
+            });
         });
-    } else if (resume.skills && typeof resume.skills === 'object') {
-        // legacy object map
-        Object.entries(resume.skills).forEach(([category, skills]) => {
-            addSkillEntry({ category, skills: Array.isArray(skills) ? skills.join(', ') : skills });
+    }
+
+    // Projects - handle both github and link field names
+    if (resume.projects && Array.isArray(resume.projects)) {
+        resume.projects.forEach(proj => {
+            // Handle description as both string and array
+            let description = [];
+            if (typeof proj.description === 'string') {
+                description = proj.description.split('. ').filter(s => s.trim());
+            } else if (Array.isArray(proj.description)) {
+                description = proj.description;
+            } else if (Array.isArray(proj.highlights)) {
+                description = proj.highlights;
+            }
+            
+            addProjectEntry({
+                name: proj.name || '',
+                github: proj.github || proj.link || '',  // FIX: Accept both
+                startDate: proj.startDate || '',
+                endDate: proj.endDate || '',
+                description: description
+            });
         });
+    }
+
+    // Skills - handle both object (old) and array (new) formats
+    if (resume.skills) {
+        if (typeof resume.skills === 'object' && !Array.isArray(resume.skills)) {
+            // Old format: {"Category": ["skill1", "skill2"]}
+            Object.entries(resume.skills).forEach(([category, skills]) => {
+                const skillsStr = Array.isArray(skills) ? skills.join(', ') : String(skills);
+                addSkillEntry({ category, skills: skillsStr });
+            });
+        } else if (Array.isArray(resume.skills)) {
+            // New format: ["skill1", "skill2", "skill3"]
+            // Group into categories of ~5 skills each for display
+            const chunkSize = 5;
+            for (let i = 0; i < resume.skills.length; i += chunkSize) {
+                const chunk = resume.skills.slice(i, i + chunkSize);
+                const category = i === 0 ? 'Primary Skills' : `Skills ${Math.floor(i / chunkSize) + 1}`;
+                addSkillEntry({ 
+                    category: category, 
+                    skills: chunk.join(', ') 
+                });
+            }
+        }
     }
 }
 
