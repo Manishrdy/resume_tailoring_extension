@@ -35,7 +35,7 @@ const storage = (() => {
 
     function normalizeResumeShape(resume) {
         // Make imports resilient across versions / partial data.
-        // We won't "validate hard" here — we'll keep data and let the UI edit it.
+        // We won't "validate hard" here – we'll keep data and let the UI edit it.
         const r = (resume && typeof resume === 'object') ? resume : {};
 
         const personal = (r.personalInfo && typeof r.personalInfo === 'object') ? r.personalInfo : {};
@@ -44,9 +44,24 @@ const storage = (() => {
         const projects = Array.isArray(r.projects) ? r.projects : [];
 
         // Skills can be stored either as object {category:[...]} (current) or as array [{category, skills}]
+        // OR as flat array (new backend format)
         let skills = r.skills;
         if (!skills) skills = {};
-        if (Array.isArray(skills)) {
+
+        // NEW: Handle flat array from backend
+        if (Array.isArray(skills) && skills.length > 0 && typeof skills[0] === 'string') {
+            // Flat array like ["Python", "JavaScript", "FastAPI"]
+            // Group into categories for display
+            const obj = {};
+            const chunkSize = 5;
+            for (let i = 0; i < skills.length; i += chunkSize) {
+                const chunk = skills.slice(i, i + chunkSize);
+                const categoryName = i === 0 ? 'Primary Skills' : `Skills ${Math.floor(i / chunkSize) + 1}`;
+                obj[categoryName] = chunk;
+            }
+            skills = obj;
+        } else if (Array.isArray(skills)) {
+            // OLD: Array of objects like [{category: "Languages", skills: "Python, Java"}]
             const obj = {};
             for (const item of skills) {
                 const cat = safeString(item?.category);
@@ -71,13 +86,13 @@ const storage = (() => {
                 phone: safeString(personal.phone),
                 location: safeString(personal.location),
                 linkedin: safeString(personal.linkedin),
-                portfolio: safeString(personal.portfolio),
+                portfolio: safeString(personal.portfolio) || safeString(personal.website),  // FIX: Accept both
                 github: safeString(personal.github),
                 summary: safeString(personal.summary)
             },
             experience: experience.map(e => ({
-                employer: safeString(e?.employer),
-                role: safeString(e?.role),
+                employer: safeString(e?.employer) || safeString(e?.company),  // FIX: Accept both
+                role: safeString(e?.role) || safeString(e?.position),         // FIX: Accept both
                 startDate: safeString(e?.startDate),
                 endDate: safeString(e?.endDate),
                 description: Array.isArray(e?.description)
@@ -89,19 +104,29 @@ const storage = (() => {
                 degree: safeString(e?.degree),
                 startDate: safeString(e?.startDate),
                 endDate: safeString(e?.endDate),
-                coursework: Array.isArray(e?.coursework)
-                    ? e.coursework.map(safeString).filter(Boolean)
-                    : safeString(e?.coursework).split(',').map(s => s.trim()).filter(Boolean)
+                coursework: Array.isArray(e?.coursework) ? e.coursework.map(safeString).filter(Boolean) :
+                    Array.isArray(e?.achievements) ? e.achievements.map(safeString).filter(Boolean) :  // FIX: Accept both
+                        safeString(e?.coursework || e?.achievements).split(',').map(s => s.trim()).filter(Boolean)
             })),
-            projects: projects.map(p => ({
-                name: safeString(p?.name),
-                github: safeString(p?.github),
-                startDate: safeString(p?.startDate),
-                endDate: safeString(p?.endDate),
-                description: Array.isArray(p?.description)
-                    ? p.description.map(safeString).filter(Boolean)
-                    : safeString(p?.description).split('\n').map(s => s.trim()).filter(Boolean)
-            })),
+            projects: projects.map(p => {
+                // Handle description as string or array or from highlights
+                let description = [];
+                if (Array.isArray(p?.description)) {
+                    description = p.description.map(safeString).filter(Boolean);
+                } else if (typeof p?.description === 'string' && p.description) {
+                    description = p.description.split('. ').map(s => s.trim()).filter(Boolean);
+                } else if (Array.isArray(p?.highlights)) {
+                    description = p.highlights.map(safeString).filter(Boolean);
+                }
+
+                return {
+                    name: safeString(p?.name),
+                    github: safeString(p?.github) || safeString(p?.link),  // FIX: Accept both
+                    startDate: safeString(p?.startDate),
+                    endDate: safeString(p?.endDate),
+                    description: description
+                };
+            }),
             skills,
             certifications: Array.isArray(r.certifications) ? r.certifications : []
         };
