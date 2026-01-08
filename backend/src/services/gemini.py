@@ -445,14 +445,15 @@ STRICT REQUIREMENTS:
         
         # STEP 5: Merge tailored content back into original resume
         try:
-            enhanced_resume = self._merge_tailored_content(resume, result)
+            # NEW (CORRECT)
+            enhanced_resume = self._merge_tailored_content(resume, result["tailoredResume"])
             
             logger.info("✅ Successfully merged tailored content into resume")
             logger.debug("="*80)
             logger.debug("🔍 MERGE RESULTS:")
             logger.debug(f"Summary updated: {enhanced_resume.personalInfo.summary != resume.personalInfo.summary}")
-            logger.debug(f"Experiences updated: {len([e for e in enhanced_resume.experience if e != resume.experience[i] for i, _ in enumerate(enhanced_resume.experience)])}")
-            logger.debug(f"Projects updated: {len([p for p in enhanced_resume.projects if p != resume.projects[i] for i, _ in enumerate(enhanced_resume.projects)])}")
+            logger.debug(f"Experience count: {len(enhanced_resume.experience)}")
+            logger.debug(f"Projects count: {len(enhanced_resume.projects)}")
             logger.debug(f"Skills updated: {enhanced_resume.skills != resume.skills}")
             logger.debug("="*80)
             
