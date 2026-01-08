@@ -179,23 +179,6 @@ STRICT REQUIREMENTS:
 
         return add_json_enforcement(prompt)
 
-    @staticmethod
-    def _extract_response_text(response: Any) -> str:
-        """Extract text content from a Gemini response, joining multi-part outputs."""
-        if getattr(response, "text", None):
-            return response.text
-
-        if getattr(response, "candidates", None):
-            parts = []
-            content = response.candidates[0].content
-            for part in content.parts:
-                text = getattr(part, "text", None)
-                if text:
-                    parts.append(text)
-            return "".join(parts)
-
-        return ""
-
     def _parse_json_response(self, response_text: str) -> Optional[Dict[str, Any]]:
         """
         Parse JSON response from Gemini, handling various formats
