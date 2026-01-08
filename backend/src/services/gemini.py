@@ -20,6 +20,36 @@ from prompts.tailoring import (
 )
 from models.resume import Resume, TailorResponse
 
+_TAILOR_RESPONSE_SCHEMA = types.Schema(
+    type="OBJECT",
+    properties={
+        "tailoredResume": types.Schema(type="OBJECT"),
+        "matchedKeywords": types.Schema(
+            type="ARRAY",
+            items=types.Schema(type="STRING"),
+        ),
+        "missingKeywords": types.Schema(
+            type="ARRAY",
+            items=types.Schema(type="STRING"),
+        ),
+        "suggestions": types.Schema(
+            type="ARRAY",
+            items=types.Schema(type="STRING"),
+        ),
+        "changes": types.Schema(
+            type="ARRAY",
+            items=types.Schema(type="STRING"),
+        ),
+    },
+    required=[
+        "tailoredResume",
+        "matchedKeywords",
+        "missingKeywords",
+        "suggestions",
+        "changes",
+    ],
+)
+
 
 class GeminiService:
     """Service for interacting with Gemini AI"""
@@ -60,13 +90,22 @@ class GeminiService:
                     max_output_tokens=settings.GEMINI_MAX_TOKENS,
                     system_instruction=SYSTEM_INSTRUCTION,
                     response_mime_type="application/json",  # ✅ FORCE JSON OUTPUT
+                    response_schema=_TAILOR_RESPONSE_SCHEMA,
                 ),
             )
 
             duration_ms = (time.time() - start_time) * 1000
 
             # Extract text from response
-            response_text = response.text
+            response_text = self._extract_response_text(response)
+
+            finish_reason = None
+            if response.candidates:
+                finish_reason = response.candidates[0].finish_reason
+            if finish_reason and finish_reason != "STOP":
+                logger.warning(
+                    f"⚠️ Gemini finished with reason {finish_reason}; response may be incomplete."
+                )
 
             # Validate response is not empty or truncated
             if not response_text:
@@ -118,6 +157,44 @@ class GeminiService:
             # All retries failed
             logger.error(f"Gemini request failed after {settings.GEMINI_RETRY_ATTEMPTS} attempts")
             return None
+
+    def _build_tailoring_prompt(
+        self,
+        resume_json: str,
+        job_description: str,
+        force_changes: bool = False,
+    ) -> str:
+        """Build tailoring prompt with optional strict change requirements."""
+        prompt = get_tailoring_prompt(resume_json, job_description)
+        if force_changes:
+            prompt += """
+
+STRICT REQUIREMENTS:
+- You MUST make visible improvements to the resume text.
+- Rewrite the professional summary.
+- Update at least 2 bullet points in work experience.
+- Reorder skills by relevance to the job description.
+- Do NOT return the original resume unchanged.
+"""
+
+        return add_json_enforcement(prompt)
+
+    @staticmethod
+    def _extract_response_text(response: Any) -> str:
+        """Extract text content from a Gemini response, joining multi-part outputs."""
+        if getattr(response, "text", None):
+            return response.text
+
+        if getattr(response, "candidates", None):
+            parts = []
+            content = response.candidates[0].content
+            for part in content.parts:
+                text = getattr(part, "text", None)
+                if text:
+                    parts.append(text)
+            return "".join(parts)
+
+        return ""
 
     def _parse_json_response(self, response_text: str) -> Optional[Dict[str, Any]]:
         """
@@ -284,7 +361,7 @@ class GeminiService:
         logger.debug(f"Resume JSON preview: {resume_json[:500]}...")
 
         # Generate prompt
-        prompt = add_json_enforcement(get_tailoring_prompt(resume_json, job_description))
+        prompt = self._build_tailoring_prompt(resume_json, job_description)
         logger.debug("🔍 RESUME TAILORING - Generated prompt:")
         logger.debug(f"Prompt length: {len(prompt)} characters")
 
@@ -344,6 +421,28 @@ class GeminiService:
 
             # Parse tailored resume
             tailored_resume = Resume(**tailored_resume_data)
+
+            # Retry once if the resume is unchanged from the original
+            if self._is_resume_unchanged(resume, tailored_resume):
+                logger.warning(
+                    "⚠️ Tailored resume matches original; retrying with strict change requirements."
+                )
+                retry_prompt = self._build_tailoring_prompt(
+                    resume_json,
+                    job_description,
+                    force_changes=True,
+                )
+                retry_response = self._make_request(retry_prompt)
+                if retry_response:
+                    retry_parsed = self._parse_json_response(retry_response)
+                    retry_data = retry_parsed.get("tailoredResume") if retry_parsed else None
+                    if retry_data:
+                        retry_data = self._merge_with_original(resume, retry_data)
+                        retry_resume = Resume(**retry_data)
+                        if not self._is_resume_unchanged(resume, retry_resume):
+                            tailored_resume = retry_resume
+                            tailored_resume_data = retry_data
+                            parsed_response = retry_parsed
 
             # Determine matched keywords (fallback if missing)
             matched_keywords = parsed_response.get("matchedKeywords", [])
@@ -465,6 +564,12 @@ class GeminiService:
         # Return capitalized form based on original skills order
         ordered = [skill for skill in resume.skills if skill.lower() in matched]
         return ordered
+
+    def _is_resume_unchanged(self, original: Resume, tailored: Resume) -> bool:
+        """Check if tailored resume is identical to the original."""
+        original_data = original.model_dump(mode="json", exclude_none=False)
+        tailored_data = tailored.model_dump(mode="json", exclude_none=False)
+        return original_data == tailored_data
 
     def _merge_with_original(self, original: Resume, ai_data: Dict[str, Any]) -> Dict[str, Any]:
         """Merge AI output with original resume to ensure required fields are present.

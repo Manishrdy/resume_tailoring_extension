@@ -15,6 +15,7 @@ CRITICAL RULES:
 4. Maintain all factual information (dates, companies, titles, education)
 5. Keep the original structure and organization
 6. Return ONLY valid JSON - no markdown, no explanations, no preamble
+7. You MAY add at most 1-2 adjacent technologies **only if** they are strongly implied by the job description and are a reasonable extension of existing skills (e.g., add Redis if already using caching + databases). Do not add unrelated technologies.
 
 OUTPUT FORMAT:
 You must return a valid JSON object matching this exact structure:
@@ -56,17 +57,20 @@ INSTRUCTIONS:
    - Emphasize achievements that match job requirements
    - Keep company names, titles, and dates unchanged
    - Quantify achievements where possible
+   - Rewrite bullet points; do not return the same bullets unchanged
 4. **Projects**: Enhance descriptions and highlights to:
    - Match technical requirements
    - Include relevant technologies mentioned in JD
    - Keep project names and links unchanged
 5. **Skills**: Reorder skills by relevance to the job (most relevant first)
+   - If the JD highlights missing but adjacent technologies, add at most 1-2 in the skills list
 6. **Education & Certifications**: Keep unchanged
 
 IMPORTANT:
 - Maintain ALL factual information (companies, dates, titles, schools)
 - Only enhance phrasing and keyword integration
 - Keep JSON structure identical to input
+- You must make visible edits to summary and at least 2 experience bullets
 - Return ONLY the JSON object, nothing else
 
 OUTPUT:

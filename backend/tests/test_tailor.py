@@ -5,6 +5,7 @@ Unit tests for AI tailoring endpoint and Gemini service
 import pytest
 from fastapi import status
 import json
+from types import SimpleNamespace
 
 
 @pytest.mark.unit
@@ -35,6 +36,62 @@ def test_tailor_endpoint_success(test_client, sample_resume, sample_job_descript
     
     # Check we have keywords
     assert len(data["matchedKeywords"]) > 0
+
+
+@pytest.mark.unit
+def test_tailor_endpoint_retries_when_unchanged(
+    test_client, sample_resume, sample_job_description, mocker
+):
+    """Ensure tailoring retries when AI returns an unchanged resume."""
+    original_payload = {
+        "tailoredResume": json.loads(sample_resume.model_dump_json()),
+        "matchedKeywords": ["Python"],
+        "missingKeywords": [],
+        "suggestions": ["Update summary to align with role"],
+        "changes": ["No changes detected"],
+    }
+
+    updated_resume = sample_resume.model_copy(deep=True)
+    updated_resume.personalInfo.summary = (
+        "Full-stack engineer with 5+ years optimizing Python and React systems"
+    )
+    updated_payload = {
+        "tailoredResume": json.loads(updated_resume.model_dump_json()),
+        "matchedKeywords": ["Python", "React"],
+        "missingKeywords": ["Microservices"],
+        "suggestions": ["Emphasize microservices leadership"],
+        "changes": ["Rewrote summary and reordered skills"],
+    }
+
+    from app.config import settings
+
+    settings.GEMINI_API_KEY = "test-key-unchanged-retry"
+
+    mock_client = mocker.MagicMock()
+    first_response = mocker.MagicMock()
+    second_response = mocker.MagicMock()
+    first_response.text = json.dumps(original_payload)
+    second_response.text = json.dumps(updated_payload)
+    mock_client.models.generate_content.side_effect = [first_response, second_response]
+    mocker.patch("services.gemini.genai.Client", return_value=mock_client)
+
+    from services import gemini as gemini_service
+
+    gemini_service._gemini_service = None
+
+    response = test_client.post(
+        "/api/tailor",
+        json={
+            "resume": json.loads(sample_resume.model_dump_json()),
+            "jobDescription": sample_job_description,
+            "preserveStructure": True,
+        },
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["tailoredResume"]["personalInfo"]["summary"] == updated_resume.personalInfo.summary
+    assert mock_client.models.generate_content.call_count == 2
 
 
 @pytest.mark.unit
@@ -146,6 +203,29 @@ def test_json_response_parsing():
     truncated_string = '{"email": "user@example.com'
     repaired = service._parse_json_response(truncated_string)
     assert repaired == {"email": "user@example.com"}
+
+
+@pytest.mark.unit
+def test_extract_response_text_from_parts():
+    """Ensure response text is reconstructed from candidate parts when needed."""
+    from services.gemini import GeminiService
+
+    response = SimpleNamespace(
+        text="",
+        candidates=[
+            SimpleNamespace(
+                content=SimpleNamespace(
+                    parts=[
+                        SimpleNamespace(text='{"tailoredResume": '),
+                        SimpleNamespace(text='{"id": "1"}}'),
+                    ]
+                ),
+                finish_reason="STOP",
+            )
+        ],
+    )
+
+    assert GeminiService._extract_response_text(response) == '{"tailoredResume": {"id": "1"}}'
 
 
 @pytest.mark.integration
