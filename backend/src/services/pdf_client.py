@@ -4,9 +4,9 @@ Handles communication with Open Resume service for PDF generation
 """
 
 import httpx
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import time
-import json
+import re
 
 from app.config import settings
 from utils.logger import logger, log_error
@@ -22,6 +22,108 @@ class PDFClientService:
         self.timeout = settings.OPEN_RESUME_API_TIMEOUT
 
         logger.info(f"✅ PDF Client initialized (Open Resume: {self.base_url})")
+
+    @staticmethod
+    def _format_date_range(start: Optional[str], end: Optional[str]) -> str:
+        if start and end:
+            return start if start == end else f"{start} - {end}"
+        return start or end or ""
+
+    @staticmethod
+    def _split_description_to_bullets(description: Optional[str]) -> List[str]:
+        if not description:
+            return []
+        primary_parts = [
+            part.strip()
+            for part in re.split(r"(?:\r?\n|•|\u2022|;)", description)
+            if part.strip()
+        ]
+        if len(primary_parts) > 1:
+            return primary_parts
+
+        sentence_parts = [
+            part.strip()
+            for part in re.split(r"(?<=[.!?])\s+", description)
+            if part.strip()
+        ]
+        return sentence_parts or primary_parts
+
+    def _to_open_resume_payload(self, resume: Resume) -> Dict[str, Any]:
+        profile = resume.personalInfo
+        open_profile = {
+            "name": profile.name,
+            "summary": profile.summary or "",
+            "email": profile.email,
+            "phone": profile.phone or "",
+            "location": profile.location or "",
+            "url": profile.linkedin or profile.website or "",
+            "portfolio": profile.website or "",
+            "github": profile.github or "",
+        }
+
+        work_experiences = [
+            {
+                "company": exp.company,
+                "jobTitle": exp.position,
+                "date": self._format_date_range(exp.startDate, exp.endDate),
+                "descriptions": exp.description,
+            }
+            for exp in resume.experience
+        ]
+
+        educations = [
+            {
+                "school": edu.institution,
+                "degree": edu.degree if not edu.field else f"{edu.degree} in {edu.field}",
+                "date": self._format_date_range(edu.startDate, edu.endDate),
+                "gpa": edu.gpa,
+                "descriptions": edu.achievements,
+            }
+            for edu in resume.education
+        ]
+
+        projects = []
+        for project in resume.projects:
+            descriptions = (
+                project.highlights
+                if project.highlights
+                else self._split_description_to_bullets(project.description)
+            )
+            projects.append(
+                {
+                    "project": project.name,
+                    "date": self._format_date_range(
+                        project.startDate, project.endDate
+                    ),
+                    "descriptions": descriptions,
+                    "url": project.link or "",
+                }
+            )
+
+        skills_list = resume.skills
+        skills_description = ", ".join(skills_list) if skills_list else ""
+
+        return {
+            "resume": {
+                "profile": open_profile,
+                "workExperiences": work_experiences,
+                "educations": educations,
+                "projects": projects,
+                "skills": {
+                    "featuredSkills": [],
+                    "descriptions": [skills_description]
+                    if skills_description
+                    else [],
+                },
+                "custom": {"descriptions": []},
+            },
+            "settings": {
+                "fontFamily": settings.OPEN_RESUME_FONT_FAMILY,
+                "fontSize": settings.OPEN_RESUME_FONT_SIZE,
+                "themeColor": settings.OPEN_RESUME_THEME_COLOR,
+                "documentSize": settings.OPEN_RESUME_DOCUMENT_SIZE,
+            },
+        }
 
     async def generate_pdf(self, resume: Resume) -> Optional[bytes]:
         """
@@ -41,13 +143,13 @@ class PDFClientService:
 
             # Convert resume to JSON-friendly dict (ensure datetime serialization)
             # Using Pydantic's JSON encoding to handle datetimes and other types
-            resume_data = json.loads(resume.model_dump_json())
+            payload = self._to_open_resume_payload(resume)
 
             # Call Open Resume API
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
                     f"{self.base_url}/api/generate-pdf",
-                    json={"resume": resume_data},
+                    json=payload,
                     headers={"Content-Type": "application/json"},
                 )
 

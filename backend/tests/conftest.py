@@ -180,6 +180,10 @@ def env_setup(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "testing")
     monkeypatch.setenv("GEMINI_API_KEY", "test-key-12345678901234567890123456789012")
     monkeypatch.setenv("OPEN_RESUME_URL", "http://localhost:3000")
+    monkeypatch.setenv("OPEN_RESUME_FONT_FAMILY", "Open Sans")
+    monkeypatch.setenv("OPEN_RESUME_FONT_SIZE", "11")
+    monkeypatch.setenv("OPEN_RESUME_THEME_COLOR", "#000000")
+    monkeypatch.setenv("OPEN_RESUME_DOCUMENT_SIZE", "A4")
     monkeypatch.setenv("LOG_LEVEL", "ERROR")  # Reduce logging in tests
 
 

@@ -97,7 +97,13 @@ export const ResumePDF = ({
     <>
       <Document title={`${name} Resume`} author={name} producer={"OpenResume"}>
         <Page
-          size={documentSize === "A4" ? "A4" : "LETTER"}
+          size={
+            documentSize === "A4"
+              ? "A4"
+              : documentSize === "LEGAL"
+                ? "LEGAL"
+                : "LETTER"
+          }
           style={{
             ...styles.flexCol,
             color: DEFAULT_FONT_COLOR,
