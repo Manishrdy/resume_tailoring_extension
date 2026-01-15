@@ -1,7 +1,9 @@
 """
-Document Generation API endpoint - FULLY IMPLEMENTED
-Generates ATS-friendly PDFs and DOCX files using self-contained Python module
-Replaces the dependency on external Open Resume service
+Document Generation API endpoint - Template-Based System
+Generates ATS-friendly PDFs and DOCX files using HTML templates + WeasyPrint
+- PDF: HTML template → WeasyPrint → ATS-optimized PDF
+- DOCX: Template data → python-docx → Editable Word doc
+- 100% format consistency between formats
 """
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -9,7 +11,8 @@ from fastapi.responses import Response
 from datetime import datetime
 
 from models.resume import GeneratePDFRequest
-from services.document_generator import get_document_generator
+# NEW: Use template-based generator
+from services.template_document_generator import get_template_generator
 from utils import artifacts
 from utils.logger import logger, log_error
 
@@ -39,11 +42,11 @@ async def generate_pdf(request: GeneratePDFRequest):
         logger.info(f"   Template: {request.template}")
         logger.info("=" * 80)
 
-        # Get document generator
-        generator = get_document_generator()
+        # Get template-based document generator
+        generator = get_template_generator()
 
-        # Generate PDF
-        logger.info("🔄 Generating PDF with self-contained module...")
+        # Generate PDF from HTML template
+        logger.info("🔄 Generating PDF from HTML template using WeasyPrint...")
         pdf_bytes = generator.generate_pdf(request.resume)
 
         # Check if generation succeeded
@@ -124,11 +127,11 @@ async def generate_docx(request: GeneratePDFRequest):
         logger.info(f"   Template: {request.template}")
         logger.info("=" * 80)
 
-        # Get document generator
-        generator = get_document_generator()
+        # Get template-based document generator
+        generator = get_template_generator()
 
         # Generate DOCX
-        logger.info("🔄 Generating DOCX with self-contained module...")
+        logger.info("🔄 Generating DOCX from template...")
         docx_bytes = generator.generate_docx(request.resume)
 
         # Check if generation succeeded
@@ -201,16 +204,19 @@ async def document_status():
     Check if the document generation service is properly configured and available
     """
     try:
-        generator = get_document_generator()
+        generator = get_template_generator()
 
         return {
             "status": "available",
-            "service": "Self-contained Python Document Generator",
+            "service": "Template-based Document Generator",
             "formats": ["PDF", "DOCX"],
+            "template_engine": "Jinja2 + WeasyPrint",
             "message": "Document generation service is ready",
             "features": {
-                "pdf": "ATS-friendly PDF generation using ReportLab",
-                "docx": "ATS-friendly DOCX generation using python-docx",
+                "pdf": "HTML template → WeasyPrint → ATS-optimized PDF",
+                "docx": "Template data → python-docx → Editable DOCX",
+                "consistency": "100% format matching between PDF and DOCX",
+                "ats_optimized": True,
             },
         }
 

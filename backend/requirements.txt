@@ -7,12 +7,16 @@ pydantic-settings==2.1.0
 # HTTP client for calling Open Resume service (DEPRECATED - keeping for backward compatibility)
 httpx==0.26.0
 
-# Document generation - Template-based DOCX → PDF conversion
-docxtpl==0.18.0  # Jinja2 templates for DOCX (strict template format)
-python-docx==1.1.0  # DOCX manipulation
-docx2pdf==0.1.8  # Convert DOCX to PDF (Windows - preserves formatting 100%)
-Jinja2==3.1.3  # Template engine
-reportlab==4.0.9  # Fallback PDF generation (deprecated, kept for reference)
+# Document generation - Template-based HTML → PDF conversion
+# WeasyPrint for HTML → PDF (better ATS compatibility than xhtml2pdf)
+weasyprint==61.0  # HTML to PDF converter (best ATS compatibility)
+Jinja2==3.1.3  # Template engine for HTML templates
+python-docx==1.1.0  # DOCX generation (editable Word docs)
+
+# DEPRECATED - Old document generation (kept for reference/fallback)
+docxtpl==0.18.0  # Jinja2 templates for DOCX (old approach)
+docx2pdf==0.1.8  # DOCX to PDF (Windows only, replaced by WeasyPrint)
+reportlab==4.0.9  # Manual PDF generation (replaced by template system)
 
 # Logging
 loguru==0.7.2

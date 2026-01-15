@@ -1,0 +1,242 @@
+{
+  "tailoredResume": {
+    "id": "manish-backend-engineer-2026",
+    "name": "Backend Engineer",
+    "personalInfo": {
+      "name": "Manish Reddy",
+      "email": "mabotta12@gmail.com",
+      "phone": "909-449-2624",
+      "location": "Los Angeles, CA",
+      "linkedin": "https://linkedin.com/in/manish-reddyb/",
+      "github": "https://github.com/manishrdy/",
+      "website": "https://manishbotta.me",
+      "summary": "Backend Engineer with 3+ years of experience designing and building secure, scalable, and reliable backend systems. Proficient in system design, microservices, and data-intensive platforms. Expertise in optimizing latency, building fault-tolerant systems using Python, Node.js, and cloud-native tooling. Proven ability to work effectively in collaborative team environments and deliver high-quality software on time."
+    },
+    "education": [
+      {
+        "institution": "California State University - San Bernardino",
+        "degree": "Masters in Computer Science - 3.8 GPA",
+        "field": null,
+        "startDate": "Aug 2023",
+        "endDate": "May 2025",
+        "gpa": null,
+        "achievements": [
+          "Artificial Intelligence",
+          "Theory of Algorithms",
+          "Modern Computer Architecture",
+          "Software Engineering",
+          "Operating Systems"
+        ]
+      },
+      {
+        "institution": "Amrita Vishwa Vidyapeetham - Coimbatore, India",
+        "degree": "Bachelors in Computer Science - 3.1 GPA",
+        "field": null,
+        "startDate": "Jul 2017",
+        "endDate": "May 2021",
+        "gpa": null,
+        "achievements": [
+          "Data Structures & Algorithms",
+          "Object Oriented Programming",
+          "Computer Networks",
+          "Big Data",
+          "Operating Systems"
+        ]
+      }
+    ],
+    "experience": [
+      {
+        "company": "Kore.Ai (Employer: Navi Technologies)",
+        "position": "Contract - Software Engineer",
+        "location": null,
+        "startDate": "Aug 2025",
+        "endDate": "Present",
+        "description": [
+          "Built secure backend microservices integrating HubSpot via OAuth 2.0, enabling real-time CRM sync and reducing manual data handling by 70%.",
+          "Designed scalable data ingestion pipelines for complex CRM objects, improving data availability for downstream workflows by 60%.",
+          "Deployed containerized services with CI/CD pipelines, supporting multiple daily releases with zero downtime.",
+          "Improved backend reliability and extensibility by enforcing clean API contracts and service boundaries, reducing integration defects by 40%."
+        ]
+      },
+      {
+        "company": "Yellow.Ai",
+        "position": "Software Engineer",
+        "location": null,
+        "startDate": "Sep 2021",
+        "endDate": "Jul 2023",
+        "description": [
+          "Designed and implemented distributed, event-driven backend microservices using Node.js, Python, Kafka, and Redis, scaling to 100M+ events/day with 99.9% uptime.",
+          "Contributed to system design for high-traffic services, including load balancing, horizontal scaling, and partitioned consumers for bursty enterprise workloads.",
+          "Implemented Redis caching and rate limiting, reducing P95 API latency by 40% and protecting downstream services from traffic spikes.",
+          "Optimized MySQL and MongoDB using indexing, async processing, and cache-aside patterns to improve throughput under peak load.",
+          "Built secure backend services with OAuth 2.0 / SSO, ensuring authenticated access, data isolation, and compliance.",
+          "Led migration from rule-based backend flows to LLM-powered services, cutting maintenance overhead by 50% and speeding up feature delivery."
+        ]
+      },
+      {
+        "company": "Cognizant",
+        "position": "Program Trainee Analyst",
+        "location": null,
+        "startDate": "Mar 2021",
+        "endDate": "Aug 2021",
+        "description": [
+          "Developed RESTful backend APIs using Java Spring Boot for a banking platform serving 10K+ users, reducing query response time by 40%.",
+          "Optimized database access layers and service logic, improving overall backend performance and stability.",
+          "Implemented TDD and CI/CD pipelines, achieving 80%+ test coverage and reducing production defects."
+        ]
+      },
+      {
+        "company": "Achiwer",
+        "position": "Software Engineer - Intern",
+        "location": null,
+        "startDate": "Apr 2019",
+        "endDate": "Oct 2019",
+        "description": [
+          "Built backend services for a learning marketplace using Node.js and Python, supporting 1,000+ active users.",
+          "Designed REST APIs for authentication, payments, and content delivery, improving transaction reliability by 30%.",
+          "Optimized MySQL and MongoDB schemas and deployed services on AWS, reducing hosting costs by 25%."
+        ]
+      }
+    ],
+    "skills": {
+      "Primary Skills": [
+        "Python",
+        "JavaScript",
+        "Node.js",
+        "LLMs",
+        "RAG Pipelines",
+        "LangChain",
+        "spaCy",
+        "Semantic Search",
+        "Fuzzy Search"
+      ],
+      "Skills Set 2": [
+        "Document Parsing",
+        "PostgreSQL",
+        "MySQL",
+        "MongoDB",
+        "Redis",
+        "Apache Kafka"
+      ],
+      "Skills Set 3": [
+        "AWS",
+        "EC2",
+        "S3",
+        "CloudWatch",
+        "Docker",
+        "CI/CD"
+      ],
+      "Skills Set 4": [
+        "GitHub Actions",
+        "Jenkins",
+        "FastAPI",
+        "Flask",
+        "Django",
+        "Express.js"
+      ],
+      "Skills Set 5": [
+        "Microsoft Graph API",
+        "REST",
+        "GraphQL",
+        "gRPC",
+        "PII/PHI Data Encryption",
+        "OAuth 2.0"
+      ],
+      "Skills Set 6": [
+        "SSO",
+        "Data Privacy Compliance",
+        "Secure Data Transmission",
+        "Java"
+      ]
+    },
+    "projects": [
+      {
+        "name": "Scalable Meeting Intelligence Platform",
+        "description": "Designed an end-to-end distributed backend architecture using FastAPI, Redis queues, and async workers to support fault-tolerant, non-blocking audio processing Implemented a queue-driven, multi-stage pipeline with clear service boundaries, improving throughput by 3x Built speaker-level segmentation, action items, MOM, and decision extraction, reducing manual meeting review time by 80% Applied caching, rate limiting, retries, and idempotent processing to handle partial failures and protect downstream AI services under concurrent load.",
+        "technologies": [],
+        "link": "https://github.com/Manishrdy/polygraf-meeting-summarizer",
+        "highlights": [
+          "Designed a distributed backend using FastAPI, Redis queues, and async workers for fault-tolerant audio processing.",
+          "Implemented a queue-driven pipeline with clear service boundaries, improving throughput by 3x.",
+          "Built speaker-level segmentation, action items, and decision extraction, reducing manual meeting review time by 80%.",
+          "Applied caching, rate limiting, and retries to handle partial failures and protect downstream AI services."
+        ],
+        "startDate": "Winter 2025",
+        "endDate": "Winter 2025"
+      },
+      {
+        "name": "SimCricketX – Real-Time Simulation Backend",
+        "description": "Built a real-time, multi-user backend system with Flask and REST APIs, managing concurrent simulations with consistent state handling Designed match orchestration and event processing using data-driven logic and queues, reducing hard-coded rules by 50% Applied caching and consistency trade-offs to balance correctness and performance under parallel users.",
+        "technologies": [],
+        "link": "https://github.com/Manishrdy/SimCricketX",
+        "highlights": [
+          "Built a real-time backend with Flask and REST APIs, managing simulations with consistent state handling.",
+          "Designed match orchestration and event processing using data-driven logic and queues, reducing hard-coded rules by 50%.",
+          "Applied caching and consistency trade-offs to balance correctness and performance under parallel users."
+        ],
+        "startDate": "Fall 2025",
+        "endDate": "Fall 2025"
+      },
+      {
+        "name": "High-Performance URL Shortener",
+        "description": "Developed a scalable URL shortener using Node.js, MongoDB, and Redis, handling high read/write traffic with low latency Implemented Redis caching and optimized lookup paths, reducing database reads by 70% and improving redirect latency by 60% Containerized the service with Docker, enabling fast local setup and reliable deployments.",
+        "technologies": [],
+        "link": "https://github.com/Manishrdy/url_shortener",
+        "highlights": [
+          "Developed a scalable URL shortener using Node.js, MongoDB, and Redis, handling high read/write traffic.",
+          "Implemented Redis caching and optimized lookup paths, reducing database reads by 70% and improving redirect latency.",
+          "Containerized the service with Docker, enabling fast local setup and reliable deployments."
+        ],
+        "startDate": "Summer 2025",
+        "endDate": "Summer 2025"
+      },
+      {
+        "name": "OpenResume – Open Source Backend Extensions",
+        "description": "Designed and implemented backend features for project demo links and GitHub integrations in a large open-source codebase Built an LLM-based resume tailoring backend API driven by job descriptions, reducing manual resume edits by 80% in local usage Contributed via feature development, pull requests, and issue discussions, gaining experience with real-world open-source workflows.",
+        "technologies": [],
+        "link": "https://github.com/Manishrdy/open-resume",
+        "highlights": [
+          "Designed backend features for project demo links and GitHub integrations in a large open-source codebase.",
+          "Built an LLM-based resume tailoring backend API driven by job descriptions, reducing manual resume edits.",
+          "Contributed via feature development, pull requests, and issue discussions in open-source workflows."
+        ],
+        "startDate": "2025",
+        "endDate": "Present"
+      }
+    ],
+    "certifications": [],
+    "createdAt": "2026-01-07T08:00:00Z",
+    "updatedAt": "2026-01-15T01:58:29.127000Z"
+  },
+  "atsScore": 46,
+  "matchedKeywords": [
+    "scalable",
+    "secure",
+    "reliable",
+    "team environment",
+    "high-quality software",
+    "python",
+    "java"
+  ],
+  "missingKeywords": [
+    "inclusive",
+    "growth mindset",
+    "design thinking",
+    "data analysis",
+    "C",
+    "C++",
+    "C#",
+    "JavaScript/TypeScript"
+  ],
+  "suggestions": [
+    "Add specific examples of fostering inclusive environments or diverse teams.",
+    "Highlight experience with design thinking and data analysis methodologies.",
+    "Quantify the impact of improvements made to backend systems whenever possible."
+  ],
+  "changes": [
+    "Rewrote summary to emphasize scalability, reliability, and teamwork.",
+    "Enhanced experience descriptions to include keywords like 'secure' and 'scalable'.",
+    "Reordered skills to prioritize Python, JavaScript, and related technologies.",
+    "Added Java to Skills"
+  ]
+}
