@@ -15,7 +15,10 @@
       "Bash(npm view:*)",
       "Bash(npm install:*)",
       "Bash(cat:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(git add:*)"
     ]
   }
 }

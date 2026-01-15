@@ -58,6 +58,10 @@ logs/
 # Claude Code
 .claude/
 .claude-worktrees/
+tmpclaude-*
+
+# GitHub workflows and configuration
+.github/
 
 # Node.js (Open Resume)
 node_modules/
