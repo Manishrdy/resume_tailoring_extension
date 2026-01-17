@@ -20,7 +20,25 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.shared import Inches, Pt, RGBColor
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from loguru import logger
-from weasyprint import HTML, CSS
+
+# Lazy-load WeasyPrint with Windows GTK fallback
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except OSError as e:
+    WEASYPRINT_AVAILABLE = False
+    WEASYPRINT_ERROR = str(e)
+    # Create dummy classes to prevent import errors
+    class HTML:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError(
+                f"WeasyPrint is not properly installed. Missing system dependencies: {WEASYPRINT_ERROR}\n"
+                "On Windows, install GTK+ runtime: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases\n"
+                "Or use Docker: 'make dev'"
+            )
+    class CSS:
+        def __init__(self, *args, **kwargs):
+            pass
 
 try:
     from ..models.resume import Resume
@@ -163,8 +181,20 @@ class TemplateDocumentGenerator:
             PDF file as bytes
 
         Raises:
-            Exception: If PDF generation fails
+            Exception: If PDF generation fails or WeasyPrint unavailable
         """
+        if not WEASYPRINT_AVAILABLE:
+            error_msg = (
+                f"WeasyPrint is not properly installed. Missing system dependencies.\n"
+                f"Error: {WEASYPRINT_ERROR}\n\n"
+                f"SOLUTIONS:\n"
+                f"1. Use Docker (Recommended): Run 'make dev' from project root\n"
+                f"2. Install GTK+ on Windows: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases\n"
+                f"   Then reinstall: pip install --force-reinstall weasyprint==61.0"
+            )
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+        
         try:
             logger.info(f"Generating PDF from template for: {resume.personalInfo.name}")
 

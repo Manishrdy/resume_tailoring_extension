@@ -11,7 +11,7 @@ httpx==0.26.0
 # WeasyPrint for HTML → PDF (better ATS compatibility than xhtml2pdf)
 weasyprint==61.0  # HTML to PDF converter (best ATS compatibility)
 Jinja2==3.1.3  # Template engine for HTML templates
-python-docx==1.1.0  # DOCX generation (editable Word docs)
+python-docx  # DOCX generation (editable Word docs)
 
 # DEPRECATED - Old document generation (kept for reference/fallback)
 docxtpl==0.18.0  # Jinja2 templates for DOCX (old approach)
