@@ -161,14 +161,39 @@ class TemplateDocumentGenerator:
             if 'description' in exp:
                 exp['bullets'] = exp['description']
 
+        # Format education fields
+        for edu in data.get('education', []):
+            # Create coursework string from achievements if present
+            if 'achievements' in edu and edu['achievements']:
+                edu['coursework'] = ", ".join(edu['achievements'])
+
         # Add metadata
         data['generatedDate'] = 'Generated with Resume Tailor AI'
+
+        # Add styling settings from config (with fallback to defaults)
+        try:
+            from ..app.config import settings
+            data['accentColor'] = settings.RESUME_ACCENT_COLOR
+            data['fontFamily'] = settings.RESUME_FONT_FAMILY
+            data['fontSize'] = settings.RESUME_FONT_SIZE
+        except ImportError:
+            try:
+                from app.config import settings
+                data['accentColor'] = settings.RESUME_ACCENT_COLOR
+                data['fontFamily'] = settings.RESUME_FONT_FAMILY
+                data['fontSize'] = settings.RESUME_FONT_SIZE
+            except (ImportError, ModuleNotFoundError) as e:
+                # Fallback to default styling if config not available
+                logger.warning(f"Could not import settings, using defaults: {e}")
+                data['accentColor'] = '#1e3a5f'  # Professional blue
+                data['fontFamily'] = 'Roboto'
+                data['fontSize'] = 9
 
         return data
 
     # ==================== PDF GENERATION (WeasyPrint) ====================
 
-    def generate_pdf(self, resume: Resume) -> bytes:
+    def generate_pdf(self, resume: Resume, template_name: str = 'resume_template.html') -> bytes:
         """
         Generate ATS-friendly PDF from HTML template using WeasyPrint.
 
@@ -180,6 +205,7 @@ class TemplateDocumentGenerator:
 
         Args:
             resume: Resume model instance
+            template_name: Name of the HTML template to use
 
         Returns:
             PDF file as bytes
@@ -200,13 +226,13 @@ class TemplateDocumentGenerator:
             raise RuntimeError(error_msg)
         
         try:
-            logger.info(f"Generating PDF from template for: {resume.personalInfo.name}")
+            logger.info(f"Generating PDF from template ({template_name}) for: {resume.personalInfo.name}")
 
             # Prepare template data
             template_data = self._prepare_template_data(resume)
 
             # Load and render HTML template
-            template = self.jinja_env.get_template('resume_template.html')
+            template = self.jinja_env.get_template(template_name)
             html_content = template.render(**template_data)
 
             # Generate PDF using WeasyPrint

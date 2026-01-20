@@ -14,13 +14,13 @@ current_file = Path(__file__).resolve()
 backend_dir = current_file.parent.parent.parent
 env_path = backend_dir / '.env'
 
-print(f"🔍 Looking for .env at: {env_path}")
+print(f"Looking for .env at: {env_path}")
 
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-    print(f"✅ Loaded .env from: {env_path}")
+    print(f"Loaded .env from: {env_path}")
 else:
-    print(f"⚠️  .env file not found at: {env_path}")
+    print(f"WARNING: .env file not found at: {env_path}")
 
 
 class Settings(BaseSettings):
@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     REQUEST_TIMEOUT: int = 60
     MAX_RESUME_SIZE: int = 5 * 1024 * 1024
 
+    # Resume Template Styling
+    RESUME_ACCENT_COLOR: str = "#1e3a5f"
+    RESUME_FONT_FAMILY: str = "Roboto"
+    RESUME_FONT_SIZE: int = 9
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -80,14 +85,14 @@ class Settings(BaseSettings):
 settings = Settings()
 
 # Debug output
-gemini_key_status = "✅ SET" if settings.GEMINI_API_KEY else "❌ NOT SET"
-print(f"🔧 GEMINI_API_KEY: {gemini_key_status}")
+gemini_key_status = "SET" if settings.GEMINI_API_KEY else "NOT SET"
+print(f"GEMINI_API_KEY: {gemini_key_status}")
 if settings.GEMINI_API_KEY:
     print(f"   Key length: {len(settings.GEMINI_API_KEY)} characters")
-print(f"🔧 GEMINI_MODEL: {settings.GEMINI_MODEL}")
-print(f"🔧 DOCUMENT_GENERATION: Self-contained Python module (ReportLab + python-docx)")
-print(f"🔧 CORS_ORIGINS: {settings.get_cors_origins()}")
-print(f"🔧 Environment: {settings.ENVIRONMENT}")
+print(f"GEMINI_MODEL: {settings.GEMINI_MODEL}")
+print(f"DOCUMENT_GENERATION: Self-contained Python module (ReportLab + python-docx)")
+print(f"CORS_ORIGINS: {settings.get_cors_origins()}")
+print(f"Environment: {settings.ENVIRONMENT}")
 
 
 def validate_settings():

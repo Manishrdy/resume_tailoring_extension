@@ -9,8 +9,8 @@ httpx==0.26.0
 
 # Document generation - Template-based HTML → PDF conversion
 # WeasyPrint for HTML → PDF (better ATS compatibility than xhtml2pdf)
-weasyprint==62.3  # Latest stable with pydyf 0.12.x compatibility
-# WeasyPrint 62.3 works with pydyf 0.12.x (current latest on PyPI)
+weasyprint==60.1  # Pin to 60.1 for pydyf 0.8.0 compatibility
+pydyf==0.8.0  # Pin for WeasyPrint 60.1 compatibility
 Jinja2==3.1.3  # Template engine for HTML templates
 python-docx  # DOCX generation (editable Word docs)
 
