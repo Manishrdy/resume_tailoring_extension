@@ -99,6 +99,70 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateCurrentProfileDisplay();
 });
 
+// Enforce bullet formatting on experience/project textareas
+function attachBulletBehavior(textarea) {
+    if (!textarea) return;
+
+    const ensureLeadingBullets = () => {
+        const raw = textarea.value;
+        if (!raw || !raw.trim()) {
+            textarea.value = '• ';
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            return;
+        }
+        const fixed = raw.split('\n').map(line => {
+            const t = line.trimStart();
+            if (!t) return '• ';
+            if (t.startsWith('•')) {
+                return t.replace(/^•\s*/, '• ');
+            }
+            return '• ' + t;
+        }).join('\n');
+        if (fixed !== raw) {
+            const pos = textarea.selectionStart;
+            textarea.value = fixed;
+            const newPos = Math.min(fixed.length, pos + 2);
+            textarea.setSelectionRange(newPos, newPos);
+        }
+    };
+
+    textarea.addEventListener('focus', ensureLeadingBullets);
+    textarea.addEventListener('blur', ensureLeadingBullets);
+
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const { selectionStart, selectionEnd, value } = textarea;
+            const before = value.slice(0, selectionStart);
+            const after = value.slice(selectionEnd);
+            const insert = '\n• ';
+            textarea.value = before + insert + after;
+            const pos = before.length + insert.length;
+            textarea.setSelectionRange(pos, pos);
+        }
+    });
+
+    textarea.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        const lines = (text || '')
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(Boolean)
+            .map(l => l.startsWith('•') ? l.replace(/^•\s*/, '• ') : `• ${l}`);
+        if (!lines.length) return;
+        const { selectionStart, selectionEnd, value } = textarea;
+        const before = value.slice(0, selectionStart);
+        const after = value.slice(selectionEnd);
+        const insert = lines.join('\n');
+        textarea.value = before + insert + after;
+        const pos = before.length + insert.length;
+        textarea.setSelectionRange(pos, pos);
+    });
+
+    ensureLeadingBullets();
+}
+
 // Tab Navigation
 function setupEventListeners() {
     // Tab switching
@@ -154,9 +218,11 @@ function setupEventListeners() {
 
     // Autosave resume form draft (persists even when popup closes)
     elements.resumeForm.addEventListener('input', queueSaveDraft);
-    // Capture remove clicks (inline onclick removes the node; save after)
+    // Capture remove clicks (CSP-safe: handle removal via JS, then save)
     elements.resumeForm.addEventListener('click', (e) => {
         if (e.target && e.target.classList && e.target.classList.contains('remove-btn')) {
+            const item = e.target.closest('.entry-item, .skill-category');
+            if (item) item.remove();
             setTimeout(queueSaveDraft, 0);
         }
     });
@@ -669,9 +735,6 @@ async function restoreDraftOrPopulate(resume) {
 
     // Fallback to saved resume
     populateForm(resume);
-}
-
-function hasDraftContent(state) {
     if (!state) return false;
     const s = JSON.stringify(state);
     // cheap check to avoid storing completely blank drafts
@@ -686,6 +749,8 @@ function collectResumeFormState() {
         return (document.querySelector(`[name="${b}"]`)?.value || '').trim();
     };
 
+            // No draft: pre-populate one empty entry per section for guidance
+            prepopulateEmptySections();
     const state = {
         resumeName: get('resumeName'),
         personalInfo: {
@@ -742,11 +807,12 @@ function collectResumeFormState() {
         state.projects.push({ name, github, startDate, endDate, description });
     }
 
-    // Skills
+    // Skills - parse bullets into array
     const skillItems = Array.from(elements.skillsContainer.querySelectorAll('.skill-category'));
     for (const item of skillItems) {
         const category = (item.querySelector('[name="skill-category[]"]')?.value || '').trim();
-        const skills = (item.querySelector('[name="skill-items[]"]')?.value || '').trim();
+        const skillsRaw = (item.querySelector('[name="skill-items[]"]')?.value || '').trim();
+        const skills = parseBullets(skillsRaw);
         state.skills.push({ category, skills });
     }
 
@@ -1070,9 +1136,13 @@ function addExperienceEntry(data = null) {
     const employerVal = data?.employer || data?.company || '';
     const roleVal = data?.role || data?.position || '';
     const descLines = Array.isArray(data?.description) ? data.description : parseBullets(data?.description);
+    const descText = descLines.map(line => line.startsWith('•') ? line.replace(/^•\s*/, '• ') : `• ${line}`).join('\n') || '• ';
 
     div.innerHTML = `
-        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        <div class="entry-header">
+            <span class="entry-title">💼 Experience</span>
+            <button type="button" class="icon-btn remove-btn">Remove</button>
+        </div>
         <div class="form-group">
             <label>Employer</label>
             <input type="text" name="exp-employer[]" class="form-control" placeholder="Company Name" value="${employerVal}">
@@ -1093,11 +1163,13 @@ function addExperienceEntry(data = null) {
         </div>
         <div class="form-group">
             <label>Description (one bullet per line)</label>
-            <textarea name="exp-desc[]" class="form-control" rows="4" placeholder="• Built secure backend microservices...
-- Designed scalable data ingestion...">${descLines.join('\\n')}</textarea>
+            <textarea name="exp-desc[]" class="form-control bullet-textarea" rows="4" placeholder="• Built secure backend microservices...\n• Designed scalable data ingestion...">${descText}</textarea>
         </div>
     `;
     elements.experienceContainer.appendChild(div);
+
+    const textarea = div.querySelector('textarea[name="exp-desc[]"]');
+    attachBulletBehavior(textarea);
 }
 
 // Add Education Entry
@@ -1110,7 +1182,10 @@ function addEducationEntry(data = null) {
         : (Array.isArray(data?.coursework) ? data.coursework : []);
 
     div.innerHTML = `
-        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        <div class="entry-header">
+            <span class="entry-title">🎓 Education</span>
+            <button type="button" class="icon-btn remove-btn">Remove</button>
+        </div>
         <div class="form-group">
             <label>Institution</label>
             <input type="text" name="edu-institution[]" class="form-control" placeholder="University Name" value="${data?.institution || ''}">
@@ -1144,9 +1219,13 @@ function addProjectEntry(data = null) {
 
     const linkVal = data?.github || data?.link || '';
     const descLines = Array.isArray(data?.description) ? data.description : parseBullets(data?.description);
+    const descText = descLines.map(line => line.startsWith('•') ? line.replace(/^•\s*/, '• ') : `• ${line}`).join('\n') || '• ';
 
     div.innerHTML = `
-        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        <div class="entry-header">
+            <span class="entry-title">🚀 Project</span>
+            <button type="button" class="icon-btn remove-btn">Remove</button>
+        </div>
         <div class="form-group">
             <label>Project Name</label>
             <input type="text" name="proj-name[]" class="form-control" placeholder="Project Title" value="${data?.name || ''}">
@@ -1167,29 +1246,41 @@ function addProjectEntry(data = null) {
         </div>
         <div class="form-group">
             <label>Highlights (one bullet per line)</label>
-            <textarea name="proj-desc[]" class="form-control" rows="4" placeholder="• Designed an end-to-end distributed backend...
-- Implemented a queue-driven pipeline...">${descLines.join('\\n')}</textarea>
+            <textarea name="proj-desc[]" class="form-control bullet-textarea" rows="4" placeholder="• Designed an end-to-end distributed backend...\n• Implemented a queue-driven pipeline...">${descText}</textarea>
         </div>
     `;
     elements.projectsContainer.appendChild(div);
+
+    const textarea = div.querySelector('textarea[name="proj-desc[]"]');
+    attachBulletBehavior(textarea);
 }
 
 // Add Skill Entry
 function addSkillEntry(data = null) {
     const div = document.createElement('div');
     div.className = 'skill-category';
+    const skillsText = Array.isArray(data?.skills)
+        ? data.skills.map(s => s.startsWith('•') ? s.replace(/^•\s*/, '• ') : `• ${s}`).join('\n') || '• '
+        : (typeof data?.skills === 'string' ? data.skills : '• ');
+
     div.innerHTML = `
-        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        <div class="entry-header">
+            <span class="entry-title">⚡ Skill Category</span>
+            <button type="button" class="icon-btn remove-btn">Remove</button>
+        </div>
         <div class="form-group">
             <label>Category</label>
             <input type="text" name="skill-category[]" class="form-control" placeholder="e.g., Programming Languages" value="${data?.category || ''}">
         </div>
         <div class="form-group">
-            <label>Skills (comma-separated)</label>
-            <input type="text" name="skill-items[]" class="form-control" placeholder="Python, JavaScript, Java" value="${data?.skills || ''}">
+            <label>Skills (one bullet per line)</label>
+            <textarea name="skill-items[]" class="form-control bullet-textarea" rows="3" placeholder="• Python\n• JavaScript\n• Java">${skillsText}</textarea>
         </div>
     `;
     elements.skillsContainer.appendChild(div);
+
+    const textarea = div.querySelector('textarea[name="skill-items[]"]');
+    attachBulletBehavior(textarea);
 }
 
 // Handle Save Resume
@@ -1318,17 +1409,15 @@ function buildResumeFromFormData(formData) {
     });
 
     // Skills - Backend expects: List[str] with min 1 item
-    // Backend coerces dict/object → List[str] automatically
+    // Parse bullets from textarea format into array
     const skillCategories = formData.getAll('skill-category[]');
     const allSkills = [];
 
     skillCategories.forEach((category, i) => {
         if ((category || '').trim()) {
-            const items = formData.getAll('skill-items[]')[i] || '';
-            items.split(',')
-                .map(s => s.trim())
-                .filter(s => s)
-                .forEach(skill => allSkills.push(skill));
+            const itemsRaw = formData.getAll('skill-items[]')[i] || '';
+            const items = parseBullets(itemsRaw);
+            items.forEach(skill => allSkills.push(skill));
         }
     });
 
